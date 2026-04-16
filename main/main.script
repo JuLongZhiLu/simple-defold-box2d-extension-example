@@ -1,0 +1,96 @@
+-- 定义 1 米对应多少像素（用于物理世界到画面的转换）
+local METER_TO_PIXEL = 100
+
+local function create_physics(self)
+	-- ==========================================
+	-- 1. 创建静态地面 (Static Ground)
+	-- ==========================================
+	local ground_shape = {
+		shape = box2d.b2Shape.e_polygon,
+		box = true,
+		box_hx = 5,   -- 半宽 5米，实际宽度 10米，也就是Defold中的1000像素
+		box_hy = 0.5  -- 半高 0.5米，实际高度 1米，也就是Defold中的100像素
+	}
+
+	local ground_bd = {
+		position = vmath.vector3(0, 0, 0) -- 地面位于 (0, 0)
+	}
+
+	local ground_body = self.world:CreateBody(ground_bd)
+	ground_body:CreateFixture(ground_shape, 0.0) -- 密度为 0 表示静态物体
+	self.ground_body = ground_body
+
+
+	-- ==========================================
+	-- 2. 创建动态箱子 (Dynamic Box)
+	-- ==========================================
+	local box_shape = {
+		shape = box2d.b2Shape.e_polygon,
+		box = true,
+		box_hx = 0.5, -- 半宽 0.5米，实际宽度 1米，也就是Defold中的100像素
+		box_hy = 0.5  -- 半高 0.5米，实际高度 1米，也就是Defold中的100像素
+	}
+
+	local box_bd = {
+		type = box2d.b2BodyType.b2_dynamicBody,
+		position = vmath.vector3(0, 5, 0), -- 箱子初始在地面上方 5米，也就是Defold中的500像素
+		angle = 0.5 -- 稍微倾斜一点
+	}
+
+	local box_body = self.world:CreateBody(box_bd)
+
+	local fd = {
+		shape = box_shape,
+		density = 1.0,   -- 动态物体必须有密度
+		friction = 0.3,  -- 摩擦力
+		restitution = 0.5 -- 弹性系数
+	}
+	box_body:CreateFixture(fd)
+	self.box_body = box_body
+end
+
+---@param self SelfBoxScene
+function init(self)
+	self.world = box2d.NewWorld(vmath.vector3(0, -10, 0)) -- 重力向下为 10，也就是Defold中的1000像素
+	create_physics(self)
+
+
+	-- 假设我们在 Defold 场景中已经准备好了带有 Sprite 的 GO
+	-- 或者你可以通过 factory.create() 动态创建它们：
+	-- self.ground_go = factory.create("#ground_factory")
+	-- self.box_go = factory.create("#box_factory")
+
+	-- 这里为了演示，我们假设在编辑器中放置了两个 GO，ID 分别为：
+	self.ground_go = hash("/visual_ground")
+	self.box_go = hash("/visual_box")
+
+	-- 初始化地面的视觉位置
+	local ground_pos = self.ground_body:GetPosition()
+	go.set_position(ground_pos * METER_TO_PIXEL, self.ground_go)
+end
+
+---@param self SelfBoxScene
+function update(self, dt)
+	-- 步进物理世界（参数通常为：时间步, 速度迭代次数, 位置迭代次数）
+	self.world:Step(dt, 8, 3)
+
+	-- 更新动态箱子的视觉（Sprite）
+	if self.box_body and self.box_go then
+		local pos = self.box_body:GetPosition()
+		local angle = self.box_body:GetAngle()
+
+		-- 物理单位(米) 转换为 像素单位
+		local pixel_pos = pos * METER_TO_PIXEL
+		-- 为了保持 Defold 默认的 Z 轴层级，保留原有的 Z
+		pixel_pos.z = go.get_position(self.box_go).z 
+
+		-- 更新 GO 的位置
+		go.set_position(pixel_pos, self.box_go)
+		-- 更新 GO 的旋转（Box2D的角度是弧度，需要转成四元数）
+		go.set_rotation(vmath.quat_rotation_z(angle), self.box_go)
+	end
+end
+
+function final(self)
+	self.world:Destroy()
+end
