@@ -1,13 +1,8 @@
-# Welcome to Defold
+https://defold.com/assets/defold-box2d/
 
-This project was created from the "empty" project template.
 
-The settings in ["game.project"](defold://open?path=/game.project) are all the default. A bootstrap empty ["main.collection"](defold://open?path=/main/main.collection) is included.
+https://github.com/d954mas/defold-box2d
 
-Check out [the documentation pages](https://defold.com/learn) for examples, tutorials, manuals and API docs.
 
-If you run into trouble, help is available in [our forum](https://forum.defold.com).
+https://github.com/user-attachments/assets/6f4d98c5-ea0c-4037-982e-1871786b0410
 
-Happy Defolding!
-
----
